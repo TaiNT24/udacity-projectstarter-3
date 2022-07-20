@@ -35,8 +35,6 @@ jobs:
             npm install
             npm run build
             npm run start
-            npm run webpack
-            npm run start:hmr
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
