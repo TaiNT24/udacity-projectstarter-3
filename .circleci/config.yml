@@ -170,7 +170,6 @@ jobs:
           name: Add back-end ip to ansible inventory
           command: |
             # Your code here
-            command: |
             BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
@@ -183,7 +182,40 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure      
+      # Here's where you will add some code to rollback on failure    
+      - destroy-environment
+
+  configure-infrastructure:
+      docker:
+        # Docker image here that supports Ansible
+        - image: cimg/base:stable
+      steps:
+        # Checkout code from git
+        - checkout
+        # Add ssh keys with fingerprint
+        - add_ssh_keys:
+            fingerprints: ["e6:19:99:d4:82:7e:90:5c:34:f2:91:f7:58:64:4a:7e"]
+        # attach workspace
+        - attach_workspace:
+            at: ~/
+        - run:
+            name: Install dependencies
+            command: |
+              # Your code here
+              sudo apt update
+              sudo apt install software-properties-common -y
+              sudo add-apt-repository --yes --update ppa:ansible/ansible
+              sudo apt install ansible -y
+              # exit 1
+        - run:
+            name: Configure server
+            command: |
+              # Your code here
+              cd .circleci/ansible
+              ansible-playbook -i inventory.txt configure-server.yml
+              # exit 1
+        # Here's where you will add some code to rollback on failure      
+        - destroy-environment
 
 workflows:
   default:
