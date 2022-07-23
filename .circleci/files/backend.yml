@@ -28,6 +28,7 @@ Resources:
       InstanceType: t2.micro
       NetworkInterfaces: 
       - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
         GroupSet: 
           - Ref: InstanceSecurityGroup
       # SecurityGroups:
