@@ -28,6 +28,7 @@ Resources:
       InstanceType: t2.micro
       NetworkInterfaces: 
       - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
       SecurityGroups:
         - Ref: InstanceSecurityGroup
       KeyName: FPT-key # If you use another key pair name, you should change this value to match.
