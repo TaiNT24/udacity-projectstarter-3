@@ -428,6 +428,8 @@ jobs:
       # Checkout code from git
       - checkout
       - install_awscli
+      - attach_workspace:
+            at: ~/
       - run:
           name: Install dependencies
           command: |
@@ -462,6 +464,7 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
+      - install_awscli
       - attach_workspace:
             at: ~/
       - run:
