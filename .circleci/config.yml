@@ -44,7 +44,7 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_KEY_BUCKET}/migration_<<parameters.WorkflowId>>)
+            SUCCESS=$(curl --insecure https://kvdb.io/${KVDB_KEY_BUCKET}/migration_<<parameters.WorkflowId>>)
             
             if(( $SUCCESS==1 )); 
             then
