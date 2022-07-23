@@ -30,6 +30,30 @@ commands:
             unzip awscliv2.zip
             sudo ./aws/install
 
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      # Add parameter here     
+      WorkflowId:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
+    steps:
+      - run:
+          name: Revert migrations
+          # Add when this will run
+          when: on_fail
+          command: |
+            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
+            SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_KEY_BUCKET}/migration_<<parameters.WorkflowId>>)
+            
+            if(( $SUCCESS==1 )); 
+            then
+              cd ~/project/backend
+              npm install
+              npm run migration:revert
+              # exit 1
+            fi
+
 jobs:
   build-frontend:
     docker:
@@ -391,6 +415,7 @@ jobs:
             fi
       # Here's where you will add some code to rollback on failure  
       - destroy-environment 
+      - revert-migrations
 
 workflows:
   default:
