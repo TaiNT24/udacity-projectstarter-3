@@ -21,7 +21,7 @@ Resources:
           FromPort: 3030
           ToPort: 3030
           CidrIp: 0.0.0.0/0
-      VpcId: ${VPC_ID}
+      VpcId: "068b183a18fb67257"
 
   EC2Instance:
     Type: AWS::EC2::Instance
