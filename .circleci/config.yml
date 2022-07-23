@@ -170,12 +170,12 @@ jobs:
           name: Add back-end ip to ansible inventory
           command: |
             # Your code here
-            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+            BACKEND_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text
             )
-            echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+            echo $BACKEND_IP >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
             # exit 1
       - persist_to_workspace:
@@ -188,7 +188,7 @@ jobs:
   configure-infrastructure:
       docker:
         # Docker image here that supports Ansible
-        - image: cimg/base:stable
+        - image: cimg/base:2020.01
       steps:
         # Checkout code from git
         - checkout
@@ -216,6 +216,120 @@ jobs:
               # exit 1
         # Here's where you will add some code to rollback on failure      
         - destroy-environment
+  run-migrations:
+    docker:
+      # Docker image here that supports NodeJS
+      - image: cimg/node:15.0.1
+    steps:
+      # Checkout code from git
+      - checkout
+      - install_awscli
+      - run:
+          name: Run migrations
+          command: |
+            # Your code here
+            cd backend
+            npm install
+            npm run migrations > migrations_dump.txt
+            # exit 1
+      - run:
+          name: Send migration results to memstash
+          command: |
+            # Your code here
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+                curl https://kvdb.io/${KVDB_KEY_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            fi
+            # exit 1
+     # Here's where you will add some code to rollback on failure     
+      - destroy-environment 
+
+  deploy-frontend:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: cimg/base:2020.01
+    steps:
+      # Checkout code from git
+      - checkout
+      - install_awscli
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            sudo apt install -y nodejs
+            cd frontend
+            npm install
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text
+            )
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
+      - run:
+          name: Deploy frontend objects
+          command: |
+            # your code here
+            cd frontend
+            npm install
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      # Here's where you will add some code to rollback on failure     
+      - destroy-environment 
+
+  deploy-backend:
+    docker:
+      # Docker image here that supports Ansible
+        - image: cimg/base:2020.01
+    steps:
+      # Checkout code from git
+      - checkout
+      - install_awscli
+      # Add ssh keys with fingerprint
+      - add_ssh_keys:
+          fingerprints: ["e6:19:99:d4:82:7e:90:5c:34:f2:91:f7:58:64:4a:7e"]
+      # attach workspace
+      - attach_workspace:
+          at: ~/
+      - restore_cache:
+          keys: [backend-dependencies]
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+            # install ansible
+            sudo apt update
+            sudo apt install software-properties-common -y
+            sudo add-apt-repository --yes --update ppa:ansible/ansible
+            sudo apt install ansible -y
+
+            # install nodejs
+            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            sudo apt install -y nodejs
+      - run:
+          name: Deploy backend
+          command: |
+            # your code here
+            cd backend
+            npm install
+            npm run build
+            cd ..
+            tar -C backend -czvf artifact.tar.gz .
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      # Here's where you will add some code to rollback on failure  
+      - destroy-environment 
+
 
 workflows:
   default:
