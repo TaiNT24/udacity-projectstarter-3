@@ -1,4 +1,4 @@
-- name: "Add Node Env"
+- name: "Add Node"
   become: true
   shell: |
     curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
@@ -10,7 +10,7 @@
     state: latest
     update_cache: yes
 
-- name: "Install pm2 globally"
+- name: "Install pm2"
   npm:
     name: pm2
     global: yes

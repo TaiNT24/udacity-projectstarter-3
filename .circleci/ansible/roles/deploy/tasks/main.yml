@@ -1,19 +1,19 @@
-- name: "Create backend app directory"
+- name: "create application backend"
   file:
     path: ~/application-backend
     state: directory
 
-- name: "Unarchive backend files"
+- name: "unarchive backend files"
   unarchive:
     src: artifact.tar.gz
     dest: ~/application-backend
 
-- name: "Installing Node deps"
+- name: "install Node"
   shell: |
     cd ~/application-backend
     npm install
   
-- name: "Executing Node app"
+- name: "execute node app"
   shell: |
     cd ~/application-backend/dist
     pm2 stop default
@@ -29,10 +29,6 @@
      TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
      TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
      TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
-
-- name: print message
-  debug:
-    msg: "{{ execute_node.stdout_lines }}"
 
 - name: "Configure pm2 to start"
   become: true
