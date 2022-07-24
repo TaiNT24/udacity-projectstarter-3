@@ -1,0 +1,7 @@
+URL01. GitHub repository
+https://github.com/TaiNT24/udacity-projectstarter-3
+
+
+URL02. S3 Bucket
+http://udapeople-7c5c759.s3-website-us-east-1.amazonaws.com/
+
